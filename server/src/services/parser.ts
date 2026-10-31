@@ -288,34 +288,53 @@ export async function parseJsonTakeoutStream(
 }
 
 /**
- * Extracts and parses Takeout ZIP file stream
+ * Extracts and parses Takeout ZIP file stream.
+ * Accurately targets the primary Google Search activity export (Search/MyActivity.html or Search/MyActivity.json),
+ * avoiding accidental false positives like "Video Search" or premature loop termination.
  */
 export async function parseTakeoutZipStream(
   zipStream: NodeJS.ReadableStream,
   options: ParserOptions
 ): Promise<void> {
   const zip = zipStream.pipe(unzipper.Parse({ forceStream: true }));
+  let parsedAny = false;
 
   for await (const entry of zip) {
     const filePath = entry.path;
     const type = entry.type; // 'Directory' or 'File'
 
     if (type === "File") {
-      if (filePath.endsWith("MyActivity.html") && filePath.includes("Search")) {
-        // Prioritize Search/MyActivity.html
+      // Specifically target Google Search activity file:
+      // Matches "Takeout/My Activity/Search/MyActivity.html", "Search/MyActivity.html", or root "MyActivity.html"
+      // Crucially rejects "Video Search", "Image Search", "Voice Match", etc.
+      const isMainSearchHtml =
+        /(^|\/)Search\/MyActivity\.(html|htm)$/i.test(filePath) ||
+        filePath.toLowerCase() === "myactivity.html";
+
+      const isMainSearchJson =
+        /(^|\/)Search\/MyActivity\.json$/i.test(filePath) ||
+        filePath.toLowerCase() === "myactivity.json";
+
+      if (isMainSearchHtml) {
+        console.log(`[Takeout ZIP Parser] Streaming and parsing primary Search HTML: ${filePath}`);
         const parserStream = createHtmlTakeoutParserStream(options);
         await new Promise<void>((resolve, reject) => {
           entry.pipe(parserStream).on("finish", resolve).on("error", reject);
         });
-        return;
-      } else if (filePath.endsWith("MyActivity.json") && filePath.includes("Search")) {
+        parsedAny = true;
+      } else if (isMainSearchJson) {
+        console.log(`[Takeout ZIP Parser] Streaming and parsing primary Search JSON: ${filePath}`);
         await parseJsonTakeoutStream(entry, options);
-        return;
+        parsedAny = true;
       } else {
         entry.autodrain();
       }
     } else {
       entry.autodrain();
     }
+  }
+
+  if (!parsedAny) {
+    console.warn("[Takeout ZIP Parser] Notice: No Search/MyActivity.* found in ZIP archive.");
   }
 }
