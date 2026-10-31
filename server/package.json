@@ -1,0 +1,31 @@
+{
+  "name": "greader-server",
+  "version": "1.0.0",
+  "description": "Google Takeout Search Activity Ingestion, Streaming Parser & Aggregation Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.0",
+    "@google-cloud/storage": "^7.15.0",
+    "@google/genai": "^2.32.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "htmlparser2": "^9.1.0",
+    "multer": "^1.4.5-lts.1",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "@types/unzipper": "^0.10.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

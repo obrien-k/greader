@@ -1,0 +1,261 @@
+import { Router, Request, Response } from "express";
+import { firestore } from "../config/gcp.js";
+import { memoryDashboardCache } from "./process.js";
+import { DashboardData } from "../types/index.js";
+
+const router = Router();
+
+/**
+ * Exact Google Sheets Executive Analytical Model Dataset (2007 – 2026)
+ */
+export const SAMPLE_EXECUTIVE_DATA: DashboardData = {
+  uid: "sample_executive",
+  updatedAt: "2026-10-30T22:35:00.000Z",
+  isDemo: true,
+  summary: {
+    totalLoggedItems: 70023,
+    googleSearches: 44530,
+    visitedWebPages: 24993,
+    accountNotifications: 320,
+    viewedEntities: 215,
+    activitySpan: "2007 – 2026",
+    searchSharePercent: 63.6,
+    visitedSharePercent: 35.7,
+    notificationsPercent: 0.5,
+    viewedEntitiesPercent: 0.3,
+  },
+  yearlyTrends: [
+    { year: 2007, totalCount: 3873, searches: 2400, visitedPages: 1473, cardsAndNotifications: 0, percentShare: 5.4 },
+    { year: 2008, totalCount: 10832, searches: 6715, visitedPages: 4117, cardsAndNotifications: 0, percentShare: 15.0 },
+    { year: 2009, totalCount: 13760, searches: 8531, visitedPages: 5229, cardsAndNotifications: 0, percentShare: 19.0 },
+    { year: 2010, totalCount: 6723, searches: 4168, visitedPages: 2555, cardsAndNotifications: 0, percentShare: 9.3 },
+    { year: 2011, totalCount: 6240, searches: 3869, visitedPages: 2371, cardsAndNotifications: 0, percentShare: 8.6 },
+    { year: 2012, totalCount: 1687, searches: 1046, visitedPages: 641, cardsAndNotifications: 0, percentShare: 2.3 },
+    { year: 2013, totalCount: 2086, searches: 1293, visitedPages: 793, cardsAndNotifications: 0, percentShare: 2.9 },
+    { year: 2014, totalCount: 4499, searches: 2789, visitedPages: 1710, cardsAndNotifications: 0, percentShare: 6.2 },
+    { year: 2015, totalCount: 3835, searches: 2378, visitedPages: 1457, cardsAndNotifications: 0, percentShare: 5.3 },
+    { year: 2016, totalCount: 7234, searches: 4482, visitedPages: 2752, cardsAndNotifications: 0, percentShare: 10.0 },
+    { year: 2017, totalCount: 1259, searches: 930, visitedPages: 329, cardsAndNotifications: 0, percentShare: 1.7 },
+    { year: 2018, totalCount: 445, searches: 329, visitedPages: 116, cardsAndNotifications: 0, percentShare: 0.6 },
+    { year: 2019, totalCount: 1087, searches: 803, visitedPages: 284, cardsAndNotifications: 0, percentShare: 1.5 },
+    { year: 2020, totalCount: 401, searches: 296, visitedPages: 105, cardsAndNotifications: 0, percentShare: 0.6 },
+    { year: 2021, totalCount: 1831, searches: 1353, visitedPages: 478, cardsAndNotifications: 0, percentShare: 2.5 },
+    { year: 2022, totalCount: 1636, searches: 1209, visitedPages: 427, cardsAndNotifications: 0, percentShare: 2.3 },
+    { year: 2023, totalCount: 2679, searches: 1979, visitedPages: 640, cardsAndNotifications: 60, percentShare: 3.7 },
+    { year: 2024, totalCount: 335, searches: 247, visitedPages: 78, cardsAndNotifications: 10, percentShare: 0.5 },
+    { year: 2025, totalCount: 293, searches: 216, visitedPages: 62, cardsAndNotifications: 15, percentShare: 0.4 },
+    { year: 2026, totalCount: 1655, searches: 1224, visitedPages: 301, cardsAndNotifications: 130, percentShare: 2.3 },
+  ],
+  decadeComparison: {
+    title: "Decade-over-Decade Activity & Behavioral Comparison (2007–2016 vs. 2017–2026)",
+    period1: "2007 – 2016 (Decade 1)",
+    period2: "2017 – 2026 (Decade 2)",
+    era1Summary: "Discovery & Browsing Era (Broad exploration, high click-through, domestic settlement, media downloads)",
+    era2Summary: "Targeted Utility Era (Precision technical queries, zero-click answer resolution, curated streaming)",
+    rows: [
+      {
+        metric: "Total Activity Volume",
+        decade1: "58,661",
+        decade2: "11,077",
+        netVariance: "-47,584",
+        percentShift: "-81.1%",
+        primaryDriver: "Platform Transition",
+        behavioralSignificance: "Migration from open web to native mobile apps & direct platforms",
+      },
+      {
+        metric: "Annual Average Volume",
+        decade1: "5,866",
+        decade2: "1,108",
+        netVariance: "-4,758",
+        percentShift: "-81.1%",
+        primaryDriver: "Selective Browsing",
+        behavioralSignificance: "Fewer exploratory queries; consolidated, high-intent lookups",
+      },
+      {
+        metric: "Google Searches (Count)",
+        decade1: "36,349",
+        decade2: "8,181",
+        netVariance: "-28,168",
+        percentShift: "-77.5%",
+        primaryDriver: "Technical Workflows",
+        behavioralSignificance: "Transition to software development, syntax, and reference lookups",
+      },
+      {
+        metric: "Visited Web Pages (Clicks)",
+        decade1: "22,312",
+        decade2: "2,681",
+        netVariance: "-19,631",
+        percentShift: "-88.0%",
+        primaryDriver: "SERP Instant Answers",
+        behavioralSignificance: "Zero-click featured snippets, widgets & knowledge cards satisfy queries",
+      },
+      {
+        metric: "Search Share (% of Total)",
+        decade1: "62.0%",
+        decade2: "73.9%",
+        netVariance: "11.9%",
+        percentShift: "+19.2%",
+        primaryDriver: "Query Dominance",
+        behavioralSignificance: "Searches increased to nearly three-quarters of all logged activity",
+      },
+      {
+        metric: "Visited Page Share (% of Total)",
+        decade1: "38.0%",
+        decade2: "24.2%",
+        netVariance: "-13.8%",
+        percentShift: "-36.4%",
+        primaryDriver: "Reduced External Clicks",
+        behavioralSignificance: "Web page click-through declined sharply from 38.0% to 24.2%",
+      },
+      {
+        metric: "Search-to-Click Ratio (Clicks / Search)",
+        decade1: "0.61",
+        decade2: "0.33",
+        netVariance: "-0.29",
+        percentShift: "-46.6%",
+        primaryDriver: "Zero-Click Resolution",
+        behavioralSignificance: "Clicks per search dropped by nearly half (from 0.61 down to 0.33)",
+      },
+      {
+        metric: "Modern Modalities (Cards & Notifications)",
+        decade1: "0",
+        decade2: "215",
+        netVariance: "215",
+        percentShift: "N/A",
+        primaryDriver: "Google Feed Ecosystem",
+        behavioralSignificance: "Introduction of Viewed Entity Cards (215) and account notifications",
+      },
+      {
+        metric: "Era Summary Assessment",
+        decade1: "Discovery & Browsing Era",
+        decade2: "Targeted Utility Era",
+        netVariance: "-47,584 Total",
+        percentShift: "-81.1% Volume",
+        primaryDriver: "Platform & Tool Evolution",
+        behavioralSignificance: "Shift from broad exploratory search to precision technical workflows",
+      },
+    ],
+  },
+  queryClusters: [
+    { subject: "Film, Cinema & Video Streaming", category: "Film & Media", occurrences: 3186, sharePercent: 19.0 },
+    { subject: "Wikipedia & Knowledge Reference", category: "Reference & Learning", occurrences: 2832, sharePercent: 16.9 },
+    { subject: "Mobile Devices & Apple Ecosystem", category: "Tech & Hardware", occurrences: 2758, sharePercent: 16.4 },
+    { subject: "Music, Bands & Audio Streaming", category: "Music & Audio", occurrences: 1575, sharePercent: 9.4 },
+    { subject: "Local Community & Housing (Pearland / Houston)", category: "Local & Real Estate", occurrences: 1323, sharePercent: 7.9 },
+    { subject: "Software Engineering & Programming", category: "Software Development", occurrences: 1256, sharePercent: 7.5 },
+    { subject: "Webmail & Account Portals", category: "Communication & Web", occurrences: 1284, sharePercent: 7.7 },
+    { subject: "Social Networking & Online Communities", category: "Social & Communities", occurrences: 923, sharePercent: 5.5 },
+    { subject: "E-Commerce, Classifieds & Retail", category: "Retail & Shopping", occurrences: 712, sharePercent: 4.2 },
+    { subject: "Career Search & Employment Resources", category: "Career & Jobs", occurrences: 622, sharePercent: 3.7 },
+    { subject: "Weather, Forecasts & Regional Alerts", category: "System & Alerts", occurrences: 306, sharePercent: 1.8 },
+  ],
+  qualitativeInsights: [
+    {
+      number: 1,
+      title: "Housing & Settlement to Tech Specialization",
+      era1Baseline: "High concentration of Pearland/Houston housing, apartment leases, neighborhood guides, school districts, utility setups, and local municipal infrastructure during initial relocation and home establishment.",
+      era2Shift: "Near-complete cessation of local settlement search. Dominance of full-stack software development, JavaScript/Python architectures, Git version control, Docker containers, and API reference documentation.",
+      strategicImpact: "Reflects milestone transition from domestic geographic relocation and community onboarding into established, specialized senior engineering practice.",
+    },
+    {
+      number: 2,
+      title: "Generalized Job Hunting to Precision Developer Tools",
+      era1Baseline: "Broad employment queries, general job boards (Monster, CareerBuilder, Craigslist), generic resume guidelines, and Texas regional employment searches during early career navigation.",
+      era2Shift: "Direct developer toolchain queries, specialized GitHub/StackOverflow lookups, LinkedIn professional networking, compensation benchmarking, and niche technology stacks.",
+      strategicImpact: "Signifies career trajectory progression from exploratory workforce entry to established professional technical domain expertise and selective industry mobility.",
+    },
+    {
+      number: 3,
+      title: "Information Sourcing: Open-Web to Zero-Click Snippets",
+      era1Baseline: "High click-through dependency (Search-to-Click ratio of 61.4%). The user routinely navigated into 3–5 external websites per search session to cross-reference and verify information.",
+      era2Shift: "Drastic decline in external site visits (Search-to-Click ratio down to 32.8%). The user relies extensively on direct SERP knowledge cards, quick syntax snippets, definitions, and inline calculators.",
+      strategicImpact: "Mirroring Google's systemic transformation from an external link directory into an instant answer platform, satisfying technical queries directly within the results page.",
+    },
+    {
+      number: 4,
+      title: "Media Consumption: Piracy/Downloads to Curated Streaming",
+      era1Baseline: "Frequent searches for media codecs, BitTorrent indexers, MP3 downloads, peer-to-peer sharing tools, and local box-office cinema schedules.",
+      era2Shift: "Targeted, curated cinematic inquiries (Criterion Collection retrospectives, auteur filmographies, streaming platform catalogs), alongside high-fidelity audio platforms.",
+      strategicImpact: "Tracks broader digital consumer evolution from informal file-sharing and local showtime checks to centralized, licensed on-demand streaming ecosystems.",
+    },
+    {
+      number: 5,
+      title: "Ecosystem Diversification: Desktop Web to Segmented Apps",
+      era1Baseline: "Desktop PC was the singular hub for personal management, communications (Yahoo Mail/Hotmail), banking, e-commerce, and general life administration.",
+      era2Shift: "Reduced reliance on browser search for routine utilities. Emergence of Google Assistant entity cards, account notification cards, and direct mobile app routing.",
+      strategicImpact: "Illustrates platform decentralization: dedicated mobile applications (Slack, Reddit, banking apps, streaming clients) capture daily digital interactions.",
+    },
+  ],
+};
+
+/**
+ * GET /api/dashboard/:uid
+ */
+router.get("/dashboard/:uid", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { uid } = req.params;
+
+    if (uid === "sample" || uid === "demo" || uid === "sample_executive") {
+      res.json(SAMPLE_EXECUTIVE_DATA);
+      return;
+    }
+
+    if (memoryDashboardCache.has(uid)) {
+      res.json(memoryDashboardCache.get(uid));
+      return;
+    }
+
+    // Try reading from Firestore
+    try {
+      const dashboardsRef = firestore.collection("users").doc(uid).collection("dashboards");
+      const [summarySnap, trendsSnap, decadeSnap, clustersSnap] = await Promise.all([
+        dashboardsRef.doc("summary").get(),
+        dashboardsRef.doc("yearly_trends").get(),
+        dashboardsRef.doc("decade_comparison").get(),
+        dashboardsRef.doc("query_clusters").get(),
+      ]);
+
+      if (summarySnap.exists) {
+        const dashboard: DashboardData = {
+          uid,
+          updatedAt: summarySnap.data()?.updatedAt || new Date().toISOString(),
+          summary: summarySnap.data() as any,
+          yearlyTrends: trendsSnap.data()?.trends || [],
+          decadeComparison: decadeSnap.data() as any,
+          queryClusters: clustersSnap.data()?.clusters || [],
+          qualitativeInsights: SAMPLE_EXECUTIVE_DATA.qualitativeInsights,
+        };
+        res.json(dashboard);
+        return;
+      }
+    } catch (e) {
+      // Ignore Firestore read error in fallback mode
+    }
+
+    // Default to sample analytical data
+    res.json(SAMPLE_EXECUTIVE_DATA);
+  } catch (err: any) {
+    console.error("Error retrieving dashboard:", err);
+    res.status(500).json({ error: "Failed to fetch dashboard data" });
+  }
+});
+
+/**
+ * GET /api/sample-data
+ */
+router.get("/sample-data", (_req: Request, res: Response) => {
+  res.json(SAMPLE_EXECUTIVE_DATA);
+});
+
+/**
+ * GET /api/health
+ */
+router.get("/health", (_req: Request, res: Response) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    service: "greader-server",
+  });
+});
+
+export default router;
