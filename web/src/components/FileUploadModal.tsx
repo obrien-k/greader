@@ -12,6 +12,11 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  Cpu,
+  Cloud,
+  Server,
+  Database,
+  Lock,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { parseTakeoutTextClient } from "../lib/clientParser";
@@ -153,9 +158,8 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
         }
       }
 
-      // Client-side instant parser pathway (supports HTML & JSON)
+      // Client-side instant parser pathway (supports HTML & JSON & Server ZIP stream)
       if (selectedFile.name.endsWith(".zip")) {
-        // For zip files in client mode, pass through the server streaming parser
         setProgressMessage("Streaming ZIP archive to streaming parser...");
         const formData = new FormData();
         formData.append("file", selectedFile);
@@ -207,19 +211,19 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-xl rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-6 relative overflow-hidden">
+      <div className="w-full max-w-2xl rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-6 relative overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-base font-semibold text-white">
-                Ingest Google Takeout Search Activity
+                Takeout Search Activity Ingestion Engine
               </h3>
               <p className="text-xs text-slate-400">
-                Upload your archive or test directly with pre-computed models
+                Choose your processing pipeline based on export size and privacy preferences
               </p>
             </div>
           </div>
@@ -231,29 +235,88 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           </button>
         </div>
 
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs mb-4">
+        {/* Distinct Mode Tabs */}
+        <div className="grid grid-cols-2 gap-2 mb-4 shrink-0">
           <button
             onClick={() => setUploadMode("client")}
-            className={`flex-1 py-1.5 rounded-lg font-medium transition-all ${
+            className={`p-3 rounded-xl border text-left transition-all ${
               uploadMode === "client"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-cyan-950/40 border-cyan-500/50 shadow-md shadow-cyan-500/10"
+                : "bg-slate-950/50 border-slate-800 hover:border-slate-700 opacity-70"
             }`}
           >
-            Instant Streaming Parser (Client / Server)
+            <div className="flex items-center gap-2 mb-1">
+              <Cpu className={`w-4 h-4 ${uploadMode === "client" ? "text-cyan-400" : "text-slate-400"}`} />
+              <span className={`text-xs font-semibold ${uploadMode === "client" ? "text-cyan-300" : "text-slate-300"}`}>
+                Instant Streaming Parser
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-tight">
+              Direct in-browser & local worker stream • Zero cloud cost
+            </p>
           </button>
+
           <button
             onClick={() => setUploadMode("gcs")}
-            className={`flex-1 py-1.5 rounded-lg font-medium transition-all ${
+            className={`p-3 rounded-xl border text-left transition-all ${
               uploadMode === "gcs"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/10"
+                : "bg-slate-950/50 border-slate-800 hover:border-slate-700 opacity-70"
             }`}
           >
-            Cloud Run + GCS Signed URL
+            <div className="flex items-center gap-2 mb-1">
+              <Cloud className={`w-4 h-4 ${uploadMode === "gcs" ? "text-indigo-400" : "text-slate-400"}`} />
+              <span className={`text-xs font-semibold ${uploadMode === "gcs" ? "text-indigo-300" : "text-slate-300"}`}>
+                Cloud Run + GCS Signed URL
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-tight">
+              Direct GCS PUT upload • Eventarc worker & Firestore
+            </p>
           </button>
         </div>
+
+        {/* Distinct Pipeline Context Banners */}
+        {uploadMode === "client" ? (
+          <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/20 mb-4 shrink-0">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                Local Privacy & Rapid Streaming
+              </span>
+              <span className="text-[10px] font-mono text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
+                O(1) Memory Engine
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              Files are streamed chunk-by-chunk directly into memory without persistent storage. Ideal for quickly parsing <code className="text-cyan-300 font-mono">MyActivity.html</code> or <code className="text-cyan-300 font-mono">MyActivity.json</code> on your machine.
+            </p>
+          </div>
+        ) : (
+          <div className="p-3 rounded-xl bg-indigo-950/30 border border-indigo-500/20 mb-4 shrink-0">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="font-semibold text-indigo-300 flex items-center gap-1.5">
+                <Server className="w-3.5 h-3.5 text-indigo-400" />
+                Enterprise Scalable Pipeline (Multi-GB ZIPs)
+              </span>
+              <span className="text-[10px] font-mono text-indigo-400 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/30">
+                Signed URL + TTL
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed mb-2">
+              Bypasses web server memory bottlenecks via a direct Signed PUT URL into Google Cloud Storage. Eventarc triggers an asynchronous Cloud Run worker to batch-write aggregates into Firestore.
+            </p>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400">
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">1. Sign URL</span>
+              <span>→</span>
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">2. Direct GCS Stream</span>
+              <span>→</span>
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">3. Eventarc Worker</span>
+              <span>→</span>
+              <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800">4. Firestore Batch</span>
+            </div>
+          </div>
+        )}
 
         {/* Drag and Drop Zone */}
         <div
@@ -262,10 +325,12 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
           onDragOver={handleDrag}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
             dragActive
               ? "border-blue-500 bg-blue-500/10"
-              : "border-slate-800 hover:border-slate-700 bg-slate-950/50"
+              : uploadMode === "client"
+              ? "border-cyan-900/60 hover:border-cyan-600 bg-slate-950/50"
+              : "border-indigo-900/60 hover:border-indigo-600 bg-slate-950/50"
           }`}
         >
           <input
@@ -276,13 +341,19 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
             className="hidden"
           />
 
-          <div className="w-12 h-12 rounded-2xl bg-slate-800/80 mx-auto flex items-center justify-center text-slate-300 mb-3 shadow-inner">
+          <div
+            className={`w-12 h-12 rounded-2xl mx-auto flex items-center justify-center mb-3 shadow-inner ${
+              uploadMode === "client" ? "bg-cyan-950/50 text-cyan-400" : "bg-indigo-950/50 text-indigo-400"
+            }`}
+          >
             {selectedFile?.name.endsWith(".zip") ? (
-              <FileArchive className="w-6 h-6 text-indigo-400" />
+              <FileArchive className="w-6 h-6" />
             ) : selectedFile ? (
-              <FileCode className="w-6 h-6 text-cyan-400" />
+              <FileCode className="w-6 h-6" />
+            ) : uploadMode === "client" ? (
+              <Cpu className="w-6 h-6" />
             ) : (
-              <UploadCloud className="w-6 h-6 text-slate-400" />
+              <Cloud className="w-6 h-6" />
             )}
           </div>
 
@@ -295,14 +366,23 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • Ready to analyze
               </p>
             </div>
+          ) : uploadMode === "client" ? (
+            <div>
+              <p className="text-sm font-medium text-slate-200">
+                Drop <span className="text-cyan-400 font-semibold">MyActivity.html</span> or{" "}
+                <span className="text-cyan-400 font-semibold">MyActivity.json</span>
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Also accepts standalone search logs or local ZIP files
+              </p>
+            </div>
           ) : (
             <div>
               <p className="text-sm font-medium text-slate-200">
-                Drag and drop <span className="text-blue-400">Takeout.zip</span> or{" "}
-                <span className="text-cyan-400">MyActivity.html</span>
+                Drop <span className="text-indigo-400 font-semibold">Takeout.zip</span> for Cloud Storage Ingestion
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                Also accepts <code className="font-mono text-slate-300">MyActivity.json</code>
+                Streams directly to GCS bucket with auto-applied 24-hr TTL lifecycle
               </p>
             </div>
           )}
@@ -318,7 +398,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
 
         {/* Progress bar */}
         {isProcessing && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2 shrink-0">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-slate-300 flex items-center gap-2">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
@@ -336,7 +416,7 @@ export const FileUploadModal: React.FC<FileUploadModalProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800 shrink-0">
           <button
             onClick={handleLoadSample}
             type="button"
